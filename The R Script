@@ -1,0 +1,527 @@
+rm(list = ls()) ##clears all objects from working environment
+
+install.packages("devtools")
+devtools::install_github("MathiasHarrer/dmetar")
+install.packages("tidyverse")
+install.packages("meta")
+
+install.packages("VennDiagram")
+
+
+##------------------------------Section 0 
+##Venn/Euler diagram to represent the design of the studies according to the following:
+## 1. The choice of predictors; 2. The choice of covariables
+
+##Creating Venn Diagram to represent choice of multiple predictors in the selected studies.
+library("VennDiagram")
+
+###Preparing vector characters
+NDVI <- c("G2022","K2021","L2023","P2022","P2023","S2023","S2021")
+Proximity <- c("S2021")
+Abundance <- c("J2022","J2021","L2021","P2023","Y2022")
+Visitation <- c("Z2022")
+Canopy <- c("G2022","R2021")
+
+Vector_list <- list(NDVI,Proximity,Abundance,Visitation,Canopy)
+names(Vector_list) <- c("NDVI/EVI","Proximity","Abundance","Visitation","Canopy")
+
+venn.diagram(Vector_list, filename = "Venn Diagram",
+             imagetype = "png", 
+             fill=c("lightyellow","lightblue","lightgreen","lightpink","skyblue"),
+             col=c("black"), cat.cex=0.6,cat.dist=c(0.05))
+
+##Creating Venn Diagram: selection of covariates
+##Preparing vector characters
+demographic <- c("G2022","J2022","J2021","K2021","L2023","L2021","P2022","P2023","R2021","S2023","S2021","Y2022","Z2022")
+health <- c("G2022","J2022","J2021","K2021","L2023","L2021","P2022","R2021","Y2022","Z2022")
+economic <- c("G2022","J2022","J2021","K2021","L2023","L2021","P2022","P2023","S2023","S2021","Y2022","Z2022")
+climatic <- c("G2022","J2022","K2021","L2023","P2022","S2023","Y2022")
+Political <- c("J2022","K2021","P2022","Y2022","Z2022")
+
+VVList <- list(demographic,health,economic,climatic,Political)
+names(VVList) <- c("Demographic", "Health","Economic","Climatic","Political")
+
+venn.diagram(VVList, filename = "Venn Diagram 2",
+             imagetype = "png", 
+             fill=c("brown","pink","skyblue","lightgreen","lightblue"),
+             col=c("black"), cat.cex=0.6,cat.dist=c(0.05))
+
+
+##--------------------------------Section A
+##Pooling effect size: we chose a random-effects model because we expect significant heterogeneity between studies (i.e., they are not homogeneous).
+## Pre-calculated effect sizes (regression estimates: β) were used as  effect type; and the reported confidence intervals (or standard error) were retrieved from the studies' reports.
+##Section A: in the first section, we only focus on  studies that reported regression estimates either in the main text or supplementary documents to report the relationship between greenery & COVID-19 infections. 
+
+
+library(tidyverse)
+library(dmetar)
+library(meta)
+library(metafor)
+
+literature_beta <- read.table( "C:\\Users\\pbopa\\OneDrive\\Documents\\University of Johannesburg\\Meta Analysis\\Data Analysis\\Literature_beta.txt", header = T)
+attach(literature_beta)
+
+## A.1.1.unstratified Analysis
+model1 <- metagen(TE = beta,
+                          seTE = se,
+                          lower = lowerci,
+                          upper = upperci,
+                          studlab = author,
+                          data = literature_beta,
+                          sm = "Estimate (β)",
+                          fixed = FALSE,
+                          prediction = TRUE,
+                          random = TRUE,
+                          method.tau = "REML",
+                          hakn = TRUE,
+                          title = "Greenery and COVID-19 infections (Beta)")
+summary(model1)
+
+
+##A.1.2. A forest plot to visualize the results of the meta-analysis (for infections)
+forest.meta(model1, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+###A.2.Stratified Analysis: using subgroups:  Study ID; Year of publication;sample size; predictors; and covariables
+##A.2.1.Study ID
+model1_ID <- metagen(TE = beta,
+                  seTE = se,
+                  lower = lowerci,
+                  upper = upperci,
+                  studlab = author,
+                  subgroup = author,
+                  data = literature_beta,
+                  sm = "Estimate (β)",
+                  fixed = FALSE,
+                  prediction = TRUE,
+                  random = TRUE,
+                  method.tau = "REML",
+                  hakn = TRUE,
+                  title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_ID)
+
+forest.meta(model1_ID, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+
+##A.2.2. Study Year
+model1_year <- metagen(TE = beta,
+                     seTE = se,
+                     lower = lowerci,
+                     upper = upperci,
+                     studlab = author,
+                     subgroup = year,
+                     data = literature_beta,
+                     sm = "Estimate (β)",
+                     fixed = FALSE,
+                     prediction = TRUE,
+                     random = TRUE,
+                     method.tau = "REML",
+                     hakn = TRUE,
+                     title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_year)
+
+forest.meta(model1_year, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##A.2.3.Predictor
+model1_predictor <- metagen(TE = beta,
+                       seTE = se,
+                       lower = lowerci,
+                       upper = upperci,
+                       studlab = author,
+                       subgroup = predictor,
+                       data = literature_beta,
+                       sm = "Estimate (β)",
+                       fixed = FALSE,
+                       prediction = TRUE,
+                       random = TRUE,
+                       method.tau = "REML",
+                       hakn = TRUE,
+                       title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_predictor)
+
+forest.meta(model1_predictor, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##A.2.4. Sample size
+model1_sample <- metagen(TE = beta,
+                            seTE = se,
+                            lower = lowerci,
+                            upper = upperci,
+                            studlab = author,
+                            subgroup = sample,
+                            data = literature_beta,
+                            sm = "Estimate (β)",
+                            fixed = FALSE,
+                            prediction = TRUE,
+                            random = TRUE,
+                            method.tau = "REML",
+                            hakn = TRUE,
+                            title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_sample)
+
+forest.meta(model1_sample, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##A.2.5. health covariates
+model1_health <- metagen(TE = beta,
+                         seTE = se,
+                         lower = lowerci,
+                         upper = upperci,
+                         studlab = author,
+                         subgroup = health,
+                         data = literature_beta,
+                         sm = "Estimate (β)",
+                         fixed = FALSE,
+                         prediction = TRUE,
+                         random = TRUE,
+                         method.tau = "REML",
+                         hakn = TRUE,
+                         title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_health)
+
+forest.meta(model1_health, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##A.2.6. climatic covariates
+model1_climatic <- metagen(TE = beta,
+                         seTE = se,
+                         lower = lowerci,
+                         upper = upperci,
+                         studlab = author,
+                         subgroup = climatic,
+                         data = literature_beta,
+                         sm = "Estimate (β)",
+                         fixed = FALSE,
+                         prediction = TRUE,
+                         random = TRUE,
+                         method.tau = "REML",
+                         hakn = TRUE,
+                         title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_climatic)
+
+forest.meta(model1_climatic, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##A.2.7. political covariables
+model1_political <- metagen(TE = beta,
+                           seTE = se,
+                           lower = lowerci,
+                           upper = upperci,
+                           studlab = author,
+                           subgroup = political,
+                           data = literature_beta,
+                           sm = "Estimate (β)",
+                           fixed = FALSE,
+                           prediction = TRUE,
+                           random = TRUE,
+                           method.tau = "REML",
+                           hakn = TRUE,
+                           title = "Greenery and COVID-19 infections (Beta)")
+summary(model1_political)
+
+forest.meta(model1_political, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+###A.3.  Test for publication bias.
+  #First, we produce a funnel plot to test for publication bias in our study. 
+  #Second, we use the Rosenthal and Orwin's Fail-safe approaches
+  #A.3.1. Funnel plot
+funnel.meta(model1,
+            xlim = c(-1.5, 1.5),
+            studlab = F)
+
+
+  #A.3.2. The fail-safe N calculation using the Orwin Approach
+fsn(literature_beta$beta,sei=literature_beta$se, type = "Orwin", alpha =0.05)
+
+
+
+
+##---------------------------------Section B
+##In this section, we analyse studies that modeled greenness vs. COVID-19 mortality
+##Only studies that reported mortality rate ratios are included.
+
+literature_MRR <- read.table( "C:\\Users\\pbopa\\OneDrive\\Documents\\University of Johannesburg\\Meta Analysis\\Data Analysis\\mortality_IRR.txt", header = T)
+attach(literature_MRR)
+
+##B.1.1. Unstratified meta-analysis
+model2 <- metagen(TE = irr,
+                       seTE = se,
+                       lower = lowerci,
+                       upper = upperci,
+                       studlab = author,
+                       data = literature_MRR,
+                       sm = "IRR",
+                       fixed = FALSE,
+                      prediction = TRUE,
+                       random = TRUE,
+                       method.tau = "REML",
+                       hakn = TRUE,
+                       title = "Greenery and COVID-19 infections (IRR)")
+summary(model2)
+
+##B.1.2. A forest plot to visualize the results of the meta-analysis (for mortality)
+forest.meta(model2, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+
+###B.2.Stratified Analysis: using subgroups
+##B.2.1. Study ID
+model2_studyID <- metagen(TE = irr,
+                  seTE = se,
+                  lower = lowerci,
+                  upper = upperci,
+                  studlab = author,
+                  subgroup = author,
+                  data = literature_MRR,
+                  sm = "IRR",
+                  fixed = FALSE,
+                  prediction = TRUE,
+                  random = TRUE,
+                  method.tau = "REML",
+                  hakn = TRUE,
+                  title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_studyID)
+
+forest.meta(model2_studyID, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+##B.2.2. Study Year
+model2_year <- metagen(TE = irr,
+                          seTE = se,
+                          lower = lowerci,
+                          upper = upperci,
+                          studlab = author,
+                          subgroup = year,
+                          data = literature_MRR,
+                          sm = "IRR",
+                          fixed = FALSE,
+                          prediction = TRUE,
+                          random = TRUE,
+                          method.tau = "REML",
+                          hakn = TRUE,
+                          title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_year)
+
+forest.meta(model2_year, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.3. Study predictor
+model2_predictor <- metagen(TE = irr,
+                          seTE = se,
+                          lower = lowerci,
+                          upper = upperci,
+                          studlab = author,
+                          subgroup = predictor,
+                          data = literature_MRR,
+                          sm = "IRR",
+                          fixed = FALSE,
+                          prediction = TRUE,
+                          random = TRUE,
+                          method.tau = "REML",
+                          hakn = TRUE,
+                          title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_predictor)
+
+forest.meta(model2_predictor, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.4. Study sample size
+model2_sample <- metagen(TE = irr,
+                            seTE = se,
+                            lower = lowerci,
+                            upper = upperci,
+                            studlab = author,
+                            subgroup = sample,
+                            data = literature_MRR,
+                            sm = "IRR",
+                            fixed = FALSE,
+                            prediction = TRUE,
+                            random = TRUE,
+                            method.tau = "REML",
+                            hakn = TRUE,
+                            title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_sample)
+
+forest.meta(model2_sample, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.5.  health covariables
+model2_health <- metagen(TE = irr,
+                            seTE = se,
+                            lower = lowerci,
+                            upper = upperci,
+                            studlab = author,
+                            subgroup = health,
+                            data = literature_MRR,
+                            sm = "IRR",
+                            fixed = FALSE,
+                            prediction = TRUE,
+                            random = TRUE,
+                            method.tau = "REML",
+                            hakn = TRUE,
+                            title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_health)
+
+forest.meta(model2_health, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.6. climatic covariables
+model2_climatic <- metagen(TE = irr,
+                            seTE = se,
+                            lower = lowerci,
+                            upper = upperci,
+                            studlab = author,
+                            subgroup = climatic,
+                            data = literature_MRR,
+                            sm = "IRR",
+                            fixed = FALSE,
+                            prediction = TRUE,
+                            random = TRUE,
+                            method.tau = "REML",
+                            hakn = TRUE,
+                            title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_climatic)
+
+forest.meta(model2_climatic, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.7. economic covariables
+model2_economic <- metagen(TE = irr,
+                           seTE = se,
+                           lower = lowerci,
+                           upper = upperci,
+                           studlab = author,
+                           subgroup = economic,
+                           data = literature_MRR,
+                           sm = "IRR",
+                           fixed = FALSE,
+                           prediction = TRUE,
+                           random = TRUE,
+                           method.tau = "REML",
+                           hakn = TRUE,
+                           title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_economic)
+
+forest.meta(model2_economic, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+##B.2.8. political covariables
+model2_political <- metagen(TE = irr,
+                           seTE = se,
+                           lower = lowerci,
+                           upper = upperci,
+                           studlab = author,
+                           subgroup = political,
+                           data = literature_MRR,
+                           sm = "IRR",
+                           fixed = FALSE,
+                           prediction = TRUE,
+                           random = TRUE,
+                           method.tau = "REML",
+                           hakn = TRUE,
+                           title = "Greenery and COVID-19 infections (IRR)")
+summary(model2_political)
+
+forest.meta(model2_political, 
+            sortvar = author,
+            prediction = TRUE, 
+            print.tau2 = FALSE,
+            fontsize = 10,
+            leftlabs = c("Author", "g", "SE"),
+            layout = "RevMan5")
+
+###B.3. Test for publication bias.
+#B.3.1. Produce funnel plot to test for publication bias
+funnel.meta(model2,
+            xlim = c(0.7, 1.3),
+            studlab = FALSE)
+
+
+
+#B.3.2. The fail-safe N calculation using the Orwin Approach
+fsn(literature_MRR$irr,sei=literature_MRR$se, type = "Orwin", alpha =0.05)
+
+
+
